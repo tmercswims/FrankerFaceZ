@@ -620,32 +620,39 @@ export default class Input extends Module {
 				if ( ! emote || ! emote.id || hidden_emotes.includes(emote.id) )
 					continue;
 
-				const id = emote.id,
-					token = KNOWN_CODES[emote.token] || emote.token;
-
-				if ( ! token )
-					continue;
-
-				const replacement = REPLACEMENTS[id];
-				let src, srcSet;
-
-				if ( replacement && this.chat.context.get('chat.fix-bad-emotes') ) {
-					src = `${REPLACEMENT_BASE}${replacement}`;
-					srcSet = `${src} 1x`;
-				} else {
-					const base = `${TWITCH_EMOTE_BASE}${id}`;
-					src = `${base}/1.0`;
-					srcSet = `${src} 1x, ${base}/2.0 2x`
+				const suffixes = [''];
+				if ( emote.modifiers?.length ) {
+					suffixes.push(...emote.modifiers.map(m => `_${m.code}`));
 				}
 
-				out.push({
-					id,
-					setID: set.id,
-					token,
-					tokenLower: token.toLowerCase(),
-					srcSet,
-					favorite: favorites.includes(id)
-				});
+				for(const suffix of suffixes) {
+					const id = `${emote.id}${suffix}`,
+						token = KNOWN_CODES[`${emote.token}${suffix}`] || `${emote.token}${suffix}`;
+
+					if (!token)
+						continue;
+
+					const replacement = REPLACEMENTS[id];
+					let src, srcSet;
+
+					if (replacement && this.chat.context.get('chat.fix-bad-emotes')) {
+						src = `${REPLACEMENT_BASE}${replacement}`;
+						srcSet = `${src} 1x`;
+					} else {
+						const base = `${TWITCH_EMOTE_BASE}${id}`;
+						src = `${base}/1.0`;
+						srcSet = `${src} 1x, ${base}/2.0 2x`
+					}
+
+					out.push({
+						id,
+						setID: set.id,
+						token,
+						tokenLower: token.toLowerCase(),
+						srcSet,
+						favorite: favorites.includes(id)
+					});
+				}
 			}
 		}
 
